@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import LoginForm from "./loginForm";
 import SignupForm from "./signupForm";
 import { useRouter } from "next/navigation";
@@ -10,7 +10,22 @@ export default function AuthPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
 
-  // Redirect to main page if already logged in
+  const stars = useMemo(() => Array.from({ length: 10 }, (_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    top: `${Math.random() * 100}%`,
+    delay: `${Math.random() * 3}s`,
+    emoji: ['⭐', '✨', '🌟', '💫'][Math.floor(Math.random() * 4)]
+  })), []);
+
+  const bubbles = useMemo(() => Array.from({ length: 6 }, (_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    size: 20 + Math.random() * 40,
+    delay: `${Math.random() * 8}s`,
+    duration: `${8 + Math.random() * 4}s`
+  })), []);
+
   useEffect(() => {
     if (!isLoading && user) {
       router.push("/");
@@ -18,12 +33,13 @@ export default function AuthPage() {
   }, [user, isLoading, router]);
 
   const onLoginSuccess = () => {
-    router.push("/"); // redirect to AI assistant
+    router.push("/");
   };
 
   if (isLoading) {
     return (
       <div style={styles.loadingContainer}>
+        <span style={{ fontSize: "40px", marginBottom: "10px" }}>🐧</span>
         Loading...
       </div>
     );
@@ -31,8 +47,38 @@ export default function AuthPage() {
 
   return (
     <div style={styles.pageContainer}>
+      
+      <div className="floating-elements">
+        {stars.map((star) => (
+          <span
+            key={`star-${star.id}`}
+            className="star"
+            style={{
+              left: star.left,
+              top: star.top,
+              animationDelay: star.delay
+            }}
+          >
+            {star.emoji}
+          </span>
+        ))}
+        {bubbles.map((bubble) => (
+          <div
+            key={`bubble-${bubble.id}`}
+            className="bubble"
+            style={{
+              left: bubble.left,
+              width: bubble.size,
+              height: bubble.size,
+              animationDelay: bubble.delay,
+              animationDuration: bubble.duration
+            }}
+          />
+        ))}
+      </div>
+
       <div style={styles.card}>
-        <div style={styles.logo}>🤖 Omli AI</div>
+        <div style={styles.logo}>🐧 Monu</div>
         
         {showLogin ? (
           <>
@@ -66,21 +112,33 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    background: "linear-gradient(135deg, #a5b4fc 0%, #c4b5fd 50%, #f5d0fe 100%)",
+    backgroundSize: "400% 400%",
+    animation: "gradientShift 15s ease infinite",
     padding: "20px",
+    position: "relative",
+    overflow: "hidden",
   },
   card: {
-    backgroundColor: "white",
-    padding: "40px",
-    borderRadius: "16px",
-    boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    backdropFilter: "blur(20px)",
+    padding: "35px",
+    borderRadius: "30px",
+    boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
     width: "100%",
-    maxWidth: "400px",
+    maxWidth: "360px",
+    position: "relative",
+    zIndex: 2,
+    border: "3px solid rgba(255,255,255,0.6)",
   },
   logo: {
-    fontSize: "2rem",
+    fontSize: "1.8rem",
     textAlign: "center",
-    marginBottom: "24px",
+    marginBottom: "20px",
+    background: "linear-gradient(135deg, #818cf8, #a78bfa)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    fontWeight: "800",
   },
   switchText: {
     textAlign: "center",
@@ -90,7 +148,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   switchButton: {
     background: "none",
     border: "none",
-    color: "#A855F7",
+    color: "#a78bfa",
     cursor: "pointer",
     fontWeight: "bold",
     fontSize: "1rem",
@@ -98,8 +156,11 @@ const styles: { [key: string]: React.CSSProperties } = {
   loadingContainer: {
     minHeight: "100vh",
     display: "flex",
+    flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
     fontSize: "1.2rem",
+    background: "linear-gradient(135deg, #a5b4fc 0%, #c4b5fd 100%)",
+    color: "white",
   },
 };

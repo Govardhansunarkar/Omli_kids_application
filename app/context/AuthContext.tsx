@@ -14,6 +14,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
   signup: (name: string, email: string, password: string) => Promise<{ success: boolean; message: string }>;
+  googleLogin: (credential: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
 }
 
@@ -25,7 +26,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Check if user is already logged in on mount
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
@@ -85,8 +85,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, message: "User not found. Please signup." };
       } else if (data.message === "WRONG_PASSWORD") {
         return { success: false, message: "Incorrect password." };
+      } else if (data.message === "GOOGLE_ACCOUNT") {
+        return { success: false, message: "This account uses Google. Please sign in with Google." };
       }
       return { success: false, message: "Login failed." };
+    } catch (error) {
+      return { success: false, message: "Server error. Please try again." };
+    }
+  };
+
+  const googleLogin = async (code: string) => {
+    try {
+      const redirectUri = `${window.location.origin}/auth/callback`;
+      const res = await fetch("http://localhost:5000/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, redirectUri }),
+      });
+
+      const data = await res.json();
+
+      if (data.message === "LOGIN_SUCCESS") {
+        setToken(data.token);
+        const userData = { 
+          id: data.user?.id || "", 
+          name: data.user?.name || "User", 
+          email: data.user?.email || "" 
+        };
+        setUser(userData);
+        
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(userData));
+        
+        return { success: true, message: "Google login successful!" };
+      }
+      return { success: false, message: data.message || "Google login failed." };
     } catch (error) {
       return { success: false, message: "Server error. Please try again." };
     }
@@ -101,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, signup, googleLogin, logout }}>
       {children}
     </AuthContext.Provider>
   );
